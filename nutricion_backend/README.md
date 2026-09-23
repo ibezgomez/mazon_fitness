@@ -46,6 +46,7 @@ Abre **http://127.0.0.1:8000/docs** - ahi tienes toda la API para probar.
 ## Tests
 ```bash
 python -m scripts.test_api    # API (auth + CRUD) sobre SQLite, sin Docker
+python -m scripts.test_planes # flujo receta->comida->ajuste (SQLite, sin Docker)
 python -m scripts.test_rls    # aislamiento multi-tenant, requiere Postgres arrancado
 ```
 
