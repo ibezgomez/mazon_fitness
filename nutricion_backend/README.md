@@ -1,64 +1,57 @@
-# Backend de nutrición — puesta en marcha desde cero
+# Backend Mazón Fitness
 
-Objetivo de este hito: levantar la base de datos, crear las tablas y **comprobar
-que el aislamiento entre entrenadores (multi-tenant) funciona** antes de montar
-nada encima.
+Backend del área de nutrición: base de datos multi-tenant (Postgres + RLS),
+motor de ajuste de macros y API (FastAPI) con auth por JWT.
 
-## Necesitas instalado
-- **Docker Desktop** (para la base de datos, sin ensuciar tu máquina).
+## Necesitas
+- **Docker Desktop** (para Postgres).
 - **Python 3.12+**.
 
-## Pasos
+## Puesta en marcha
 
 ```bash
-# 1. Entra en la carpeta del proyecto
+# 1. Entra en la carpeta
 cd nutricion_backend
 
-# 2. Crea un entorno virtual e instala dependencias
-python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+# 2. Entorno virtual + dependencias
+python -m venv .venv
+.venv\Scripts\activate            # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 
-# 3. Crea tu archivo de entorno a partir del ejemplo
-cp .env.example .env
+# 3. Variables de entorno
+copy .env.example .env            # macOS/Linux: cp .env.example .env
+#   -> abre .env y pon un SECRET_KEY largo y aleatorio
 
-# 4. Levanta Postgres (crea también el rol 'app' no superusuario)
+# 4. Levanta Postgres (Docker)
 docker compose up -d
 
-# 5. Espera a que la BD esté lista (~5 s). Puedes comprobarlo con:
-docker compose logs db | grep "database system is ready to accept connections"
+# 5. (solo la 1a vez, si el rol 'app' no se creo por el montaje en Windows)
+docker compose exec db psql -U postgres -d nutricion -c "ALTER ROLE app WITH LOGIN PASSWORD 'app';"
 
-# 6. Crea las tablas y activa el RLS
-alembic upgrade head
+# 6. Crea/actualiza las tablas y politicas
+python -m alembic upgrade head
 
-# 7. Ejecuta la prueba de aislamiento multi-tenant
-python -m scripts.test_rls
+# 7. Arranca la API
+uvicorn app.main:app --reload
 ```
 
-## Qué deberías ver en el paso 7
+Abre **http://127.0.0.1:8000/docs** - ahi tienes toda la API para probar.
 
-```
-1) A ve: ['Alimento de A']
-   B ve: ['Alimento de B']
-2) Sin tenant se ve: []
-3) ¿Bloquea insertar con tenant ajeno?: True
+## Probar la API desde /docs
+1. `POST /auth/signup` -> crea un entrenador (nombre, email, contrasena).
+2. Boton **Authorize** (arriba a la derecha) -> mete el email y la contrasena ->
+   te loguea y guarda el token.
+3. Ya puedes usar `POST/GET/PUT/DELETE /alimentos`.
 
-==> TODO OK: el aislamiento funciona
-```
-
-Si sale eso, el multi-tenant está validado y podemos construir endpoints encima.
-
-## Por qué el rol 'app' NO es superusuario
-Postgres **salta el RLS para los superusuarios**. Si te conectaras como el rol
-`postgres`, el test pasaría "viéndolo todo" y no probaría nada. Por eso la app
-usa el rol `app` (creado en `scripts/init_roles.sql`), que sí está sujeto a las
-políticas.
-
-## Comandos útiles
+## Tests
 ```bash
-# Ver las tablas y políticas por dentro (como superusuario):
-docker compose exec db psql -U postgres -d nutricion -c "\dp alimento"
-
-# Empezar de cero del todo (borra los datos y re-ejecuta init_roles.sql):
-docker compose down -v && docker compose up -d
+python -m scripts.test_api    # API (auth + CRUD) sobre SQLite, sin Docker
+python -m scripts.test_rls    # aislamiento multi-tenant, requiere Postgres arrancado
 ```
+
+## Notas
+- Nos conectamos con el rol `app` (no superusuario) porque Postgres **se salta el
+  RLS** con superusuarios. El aislamiento entre entrenadores depende de eso.
+- Postgres corre en el puerto **5433** (para no chocar con un Postgres local que
+  suele ocupar el 5432).
+- Empezar de cero del todo (borra datos): `docker compose down -v && docker compose up -d`.

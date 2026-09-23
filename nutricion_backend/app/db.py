@@ -20,6 +20,9 @@ from sqlalchemy.orm import (
     Session,
 )
 
+
+# Carga las variables de .env si el archivo existe, para que cualquier script
+# (test_rls, futuros endpoints...) use la misma DATABASE_URL, no solo Alembic.
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -58,7 +61,12 @@ def set_tenant(session: Session, tenant_id: uuid.UUID | str) -> None:
     Debe llamarse al inicio de cada request, dentro de la transacción, antes de
     tocar cualquier tabla del dominio. `is_local=true` -> el valor se limpia al
     terminar la transacción, así no se filtra entre requests que reusan conexión.
+
+    Solo aplica en PostgreSQL (donde vive el RLS). En otros motores (p. ej.
+    SQLite en tests) es un no-op.
     """
+    if session.bind is None or session.bind.dialect.name != "postgresql":
+        return
     session.execute(
         text("SELECT set_config('app.tenant_id', :tid, true)"),
         {"tid": str(tenant_id)},

@@ -1,8 +1,17 @@
-# Backend de nutrición — dependencias hasta el hito de "migración + RLS".
-# (FastAPI/uvicorn se añadirán cuando montemos los endpoints.)
+# Backend Mazón Fitness — dependencias.
 SQLAlchemy>=2.0
 alembic>=1.13
 psycopg[binary]>=3.1
 scipy>=1.11
 numpy>=1.26
 python-dotenv>=1.0
+
+# API
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+email-validator>=2.1
+
+# Auth
+pyjwt>=2.8
+bcrypt>=4.1
