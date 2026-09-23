@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16
+    container_name: nutricion_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nutricion
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Se ejecuta SOLO la primera vez que se crea la BD (volumen vacío).
+      - ./scripts/init_roles.sql:/docker-entrypoint-initdb.d/init_roles.sql:ro
+
+volumes:
+  pgdata:

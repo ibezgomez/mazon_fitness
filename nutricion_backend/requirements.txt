@@ -1,0 +1,8 @@
+# Backend de nutrición — dependencias hasta el hito de "migración + RLS".
+# (FastAPI/uvicorn se añadirán cuando montemos los endpoints.)
+SQLAlchemy>=2.0
+alembic>=1.13
+psycopg[binary]>=3.1
+scipy>=1.11
+numpy>=1.26
+python-dotenv>=1.0
