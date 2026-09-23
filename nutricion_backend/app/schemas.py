@@ -206,3 +206,25 @@ class AjusteOut(BaseModel):
     target: dict[str, float]          # objetivos de la comida
     deviations: dict[str, float]      # desviación por macro
     within_margin: dict[str, bool]    # ¿dentro de margen cada macro?
+
+
+# --- Clientes --------------------------------------------------------------
+# Objetivos definidos por el cliente (3 valores).
+Objetivo = Literal["perdida_grasa", "volumen", "recomposicion"]
+
+
+class ClienteCreate(BaseModel):
+    nombre: str = Field(min_length=1, max_length=120)
+    objetivo: Objetivo
+
+
+class ClienteUpdate(BaseModel):
+    nombre: str | None = Field(default=None, min_length=1, max_length=120)
+    objetivo: Objetivo | None = None
+
+
+class ClienteOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    nombre: str
+    objetivo: str | None

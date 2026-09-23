@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from ..deps import get_current_trainer, get_db
 from ..models import (
+    Cliente,
     Comida,
     ComidaOpcion,
     Dieta,
@@ -73,6 +74,8 @@ def _cargar_opcion(db: Session, opcion_id: uuid.UUID) -> ComidaOpcion:
 @router.post("/dietas", response_model=DietaOut, status_code=201)
 def crear_dieta(data: DietaCreate, trainer: Trainer = Depends(get_current_trainer),
                 db: Session = Depends(get_db)) -> Dieta:
+    if data.cliente_id is not None and db.get(Cliente, data.cliente_id) is None:
+        raise HTTPException(status_code=400, detail="Ese cliente no existe o no es tuyo")
     dieta = Dieta(tenant_id=trainer.id, **data.model_dump())
     db.add(dieta)
     db.flush()
