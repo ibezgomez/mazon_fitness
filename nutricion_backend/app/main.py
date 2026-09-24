@@ -6,7 +6,9 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import alimentos, auth, clientes, planes, recetas
+from .routers import (
+    alimentos, auth, clientes, ejercicios, entrenos, planes, recetas,
+)
 
 app = FastAPI(title="Mazón Fitness API", version="0.3.0")
 
@@ -28,6 +30,8 @@ app.include_router(clientes.router)
 app.include_router(alimentos.router)
 app.include_router(recetas.router)
 app.include_router(planes.router)
+app.include_router(ejercicios.router)
+app.include_router(entrenos.router)
 
 
 @app.get("/health", tags=["infra"])

@@ -31,6 +31,7 @@ from ..schemas import (
     DiaCreate,
     DiaOut,
     DietaCreate,
+    DietaDetalle,
     DietaOut,
     OpcionCreate,
     OpcionOut,
@@ -88,10 +89,22 @@ def listar_dietas(trainer: Trainer = Depends(get_current_trainer),
     return list(db.execute(select(Dieta).order_by(Dieta.nombre)).scalars().all())
 
 
-@router.get("/dietas/{dieta_id}", response_model=DietaOut)
+@router.get("/dietas/{dieta_id}", response_model=DietaDetalle)
 def obtener_dieta(dieta_id: uuid.UUID, trainer: Trainer = Depends(get_current_trainer),
                   db: Session = Depends(get_db)) -> Dieta:
-    return _get_or_404(db, Dieta, dieta_id, "Dieta")
+    dieta = db.execute(
+        select(Dieta)
+        .where(Dieta.id == dieta_id)
+        .options(
+            selectinload(Dieta.dias)
+            .selectinload(DietaDia.comidas)
+            .selectinload(Comida.opciones)
+            .selectinload(ComidaOpcion.ingredientes)
+        )
+    ).scalar_one_or_none()
+    if dieta is None:
+        raise HTTPException(status_code=404, detail="Dieta no encontrada")
+    return dieta
 
 
 # --- días ------------------------------------------------------------------

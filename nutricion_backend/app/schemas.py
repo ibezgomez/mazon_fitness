@@ -228,3 +228,94 @@ class ClienteOut(BaseModel):
     id: uuid.UUID
     nombre: str
     objetivo: str | None
+
+
+# --- Dieta completa (árbol) ------------------------------------------------
+class DiaConComidas(DiaOut):
+    comidas: list[ComidaOut] = []
+
+
+class DietaDetalle(DietaOut):
+    dias: list[DiaConComidas] = []
+
+
+# ===========================================================================
+# ENTRENAMIENTO
+# ===========================================================================
+class EjercicioBase(BaseModel):
+    nombre: str = Field(min_length=1, max_length=160)
+    grupo_muscular: str | None = Field(default=None, max_length=80)
+    video_url: str | None = None
+    notas: str | None = None
+
+
+class EjercicioCreate(EjercicioBase):
+    pass
+
+
+class EjercicioUpdate(BaseModel):
+    nombre: str | None = Field(default=None, min_length=1, max_length=160)
+    grupo_muscular: str | None = Field(default=None, max_length=80)
+    video_url: str | None = None
+    notas: str | None = None
+
+
+class EjercicioOut(EjercicioBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+
+
+class RutinaCreate(BaseModel):
+    nombre: str = Field(min_length=1, max_length=160)
+    cliente_id: uuid.UUID | None = None
+    es_plantilla: bool = False
+
+
+class RutinaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    nombre: str
+    cliente_id: uuid.UUID | None
+    es_plantilla: bool
+
+
+class RutinaDiaCreate(BaseModel):
+    etiqueta: str = Field(min_length=1, max_length=80)
+    orden: int = 0
+
+
+class RutinaEjercicioCreate(BaseModel):
+    ejercicio_id: uuid.UUID
+    orden: int = 0
+    series: int = Field(default=3, ge=1)
+    reps: str = Field(default="", max_length=40)
+    descanso_seg: int | None = Field(default=None, ge=0)
+    rir: str | None = Field(default=None, max_length=20)
+    peso_objetivo: float | None = Field(default=None, ge=0)
+    notas: str | None = None
+
+
+class RutinaEjercicioOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    ejercicio_id: uuid.UUID
+    orden: int
+    series: int
+    reps: str
+    descanso_seg: int | None
+    rir: str | None
+    peso_objetivo: float | None
+    notas: str | None
+
+
+class RutinaDiaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    rutina_id: uuid.UUID
+    etiqueta: str
+    orden: int
+    ejercicios: list[RutinaEjercicioOut] = []
+
+
+class RutinaDetalle(RutinaOut):
+    dias: list[RutinaDiaOut] = []

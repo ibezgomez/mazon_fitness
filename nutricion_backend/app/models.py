@@ -257,3 +257,85 @@ class OpcionIngrediente(Base, TenantScoped):
 
     opcion: Mapped["ComidaOpcion"] = relationship(back_populates="ingredientes")
     alimento: Mapped["Alimento"] = relationship()
+
+
+# ===========================================================================
+# ENTRENAMIENTO
+# ===========================================================================
+class Ejercicio(Base, TenantScoped):
+    """Ejercicio de la biblioteca del entrenador (un vídeo reutilizable)."""
+    __tablename__ = "ejercicio"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    nombre: Mapped[str] = mapped_column(String(160), nullable=False)
+    grupo_muscular: Mapped[str | None] = mapped_column(String(80))
+    video_url: Mapped[str | None] = mapped_column(String(500))
+    notas: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+
+
+class Rutina(Base, TenantScoped):
+    """Rutina de entrenamiento. cliente_id nulo + es_plantilla=True -> plantilla."""
+    __tablename__ = "rutina"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    cliente_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("cliente.id", ondelete="CASCADE"), index=True
+    )
+    nombre: Mapped[str] = mapped_column(String(160), nullable=False)
+    es_plantilla: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+
+    dias: Mapped[list["RutinaDia"]] = relationship(
+        back_populates="rutina", cascade="all, delete-orphan",
+        passive_deletes=True, order_by="RutinaDia.orden",
+    )
+
+
+class RutinaDia(Base, TenantScoped):
+    """Un día de la rutina (p. ej. 'Lunes - Pecho')."""
+    __tablename__ = "rutina_dia"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    rutina_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("rutina.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    etiqueta: Mapped[str] = mapped_column(String(80), nullable=False)
+    orden: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    rutina: Mapped["Rutina"] = relationship(back_populates="dias")
+    ejercicios: Mapped[list["RutinaEjercicio"]] = relationship(
+        back_populates="dia", cascade="all, delete-orphan",
+        passive_deletes=True, order_by="RutinaEjercicio.orden",
+    )
+
+
+class RutinaEjercicio(Base, TenantScoped):
+    """Un ejercicio dentro de un día, con la prescripción del entrenador.
+
+    El peso real de cada serie lo registrará el cliente en su app; aquí solo
+    hay un peso_objetivo opcional. reps es texto para admitir rangos ('8-12').
+    """
+    __tablename__ = "rutina_ejercicio"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    rutina_dia_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("rutina_dia.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    ejercicio_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("ejercicio.id", ondelete="RESTRICT"), nullable=False
+    )
+    orden: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    series: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    reps: Mapped[str] = mapped_column(String(40), nullable=False, default="")
+    descanso_seg: Mapped[int | None] = mapped_column(Integer)
+    rir: Mapped[str | None] = mapped_column(String(20))
+    peso_objetivo: Mapped[float | None] = mapped_column(Float)
+    notas: Mapped[str | None] = mapped_column(Text)
+
+    dia: Mapped["RutinaDia"] = relationship(back_populates="ejercicios")
+    ejercicio: Mapped["Ejercicio"] = relationship()
